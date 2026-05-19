@@ -1,0 +1,50 @@
+{
+  "name": "onlineexam_backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "type-check": "tsc --noEmit",
+    "dev": "nodemon server.js"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.18",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.7.6",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.6.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yukti317/OnlineExam_Backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Yukti317/OnlineExam_Backend/issues"
+  },
+  "homepage": "https://github.com/Yukti317/OnlineExam_Backend#readme",
+  "description": "",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.1",
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^4.0.0",
+    "mongodb": "^7.1.1",
+    "multer": "^2.1.1",
+    "mysql2": "^3.15.0",
+    "nodemailer": "^8.0.3",
+    "nodemon": "^3.1.14",
+    "uuid": "^13.0.0",
+    "xlsx": "^0.18.5"
+  }
+}
