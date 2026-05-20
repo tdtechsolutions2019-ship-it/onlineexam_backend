@@ -33,8 +33,8 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin: [
-      "https://onlineexam-studentlogin.vercel.app/",
-      "https://onlineexamdashboard.vercel.app/",
+      "https://onlineexam-studentlogin.vercel.app",
+      "https://onlineexamdashboard.vercel.app",
       "http://localhost:3000",
       "http://localhost:3001",
     ], // change to live url
