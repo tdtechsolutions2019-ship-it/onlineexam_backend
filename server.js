@@ -76,9 +76,21 @@ app.get("/", (req, res) => {
 
 app.use(errorHandler);
 
+// const startServer = async () => {
+//   await connectMongoDB();
+//   app.listen(port, () => console.log(`Server running on port ${port}`));
+// };
 const startServer = async () => {
-  await connectMongoDB();
-  app.listen(port, () => console.log(`Server running on port ${port}`));
-};
+  try {
+    console.log("MONGO_URL =", process.env.MONGO_URL);
 
+    await connectMongoDB();
+
+    app.listen(port, () => {
+      console.log(`Server running on ${port}`);
+    });
+  } catch (err) {
+    console.error("STARTUP ERROR:", err);
+  }
+};
 startServer();
