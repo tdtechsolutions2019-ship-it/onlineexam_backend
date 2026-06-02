@@ -37,7 +37,7 @@ app.use(
       "https://onlineexamdashboard.vercel.app",
       "http://localhost:3000",
       "http://localhost:3001",
-    ], // change to live url
+    ], // change to live url, // change to live url
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: [
       "Content-Type",

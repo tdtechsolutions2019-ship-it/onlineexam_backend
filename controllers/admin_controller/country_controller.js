@@ -26,7 +26,7 @@ const addCountry = async (req, res) => {
 
 const getCountry = async (req, res) => {
   try {
-    const [result] = await db.query(CountryQuery.GetCountry);
+    const [result] = await db.query(CountryQuery.GetCountry); 
     sendResponse(res, 200, "Get All Country Successfully!!", result);
   } catch (error) {
     console.log("error", error);

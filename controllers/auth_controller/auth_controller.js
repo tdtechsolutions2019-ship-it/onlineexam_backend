@@ -59,10 +59,10 @@ const login = async (req, res) => {
         export: row.can_export === "1",
       };
     });
-
+    const lastName = user.last_name === null ? "" : user.last_name;
     const token = jwttoken.sign(
       {
-        name: user.first_name + " " + user.last_name,
+        name: user.first_name + " " + lastName,
         id: user.id,
         email: user.email,
         role_id: user.role_id,

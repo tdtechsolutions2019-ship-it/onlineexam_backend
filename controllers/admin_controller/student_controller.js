@@ -29,8 +29,8 @@ const addStudent = async (req, res) => {
 
     if (registration_time) {
       const [year, month] = joining_time.split("-");
-      registration_month = year; // "2026"
-      registration_year = parseInt(month); // "01"
+      registration_year = year; // "2026"
+      registration_month = parseInt(month); // "01"
     }
     const [result] = await db.query(StudentQuery.addstudent, [
       identity_no,

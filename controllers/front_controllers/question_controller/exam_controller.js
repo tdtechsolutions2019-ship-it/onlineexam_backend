@@ -60,24 +60,195 @@ const getAllExam = async (req, res) => {
     console.log("errorrr", error);
   }
 };
+
+//---------old code----------
+
+// const saveAttampt = async (req, res) => {
+//   const { session_id, student_id, examId } = req.body;
+
+//   try {
+//     const mongo = getMongoDB();
+
+//     // get answers
+//     const examData = await mongo.collection("saveAnswer").findOne({
+//       session_id,
+//       student_id,
+//       userexamId: examId,
+//     });
+
+//     // get question order/session data
+//     const sessionData = await mongo.collection("exam_sessions").findOne({
+//       session_id,
+//       student_id,
+//     });
+
+//     if (!examData) {
+//       return sendResponse(res, 404, "Exam session not found");
+//     }
+
+//     const { userexamId, answers, examdate } = examData;
+
+//     // question IDs from session
+//     const questionOrder = sessionData?.question_order || [];
+
+//     const insertData = [];
+
+//     for (const questionId in answers) {
+//       const ans = answers[questionId];
+
+//       insertData.push([
+//         userexamId,
+//         questionId,
+//         ans.answer,
+//         ans.timeTaken,
+//         ans.totalTimeTaken,
+//         examdate,
+//         "1",
+//         new Date(),
+//         JSON.stringify(questionOrder), // save once in each row
+//       ]);
+//     }
+
+//     await db.query(
+//       `
+//       INSERT INTO userexam
+//       (
+//         ExamLoginID,
+//         QuestionID,
+//         AnswerID,
+//         TimeTaken,
+//         totalTimeTaken,
+//         examdate,
+//         isExamFinished,
+//         Examendtime,
+//         questions
+//       )
+//       VALUES ?
+//       `,
+//       [insertData],
+//     );
+
+//     await mongo.collection("exam_sessions").deleteOne({ session_id });
+//     await mongo.collection("saveAnswer").deleteOne({ session_id });
+
+//     return sendResponse(res, 200, "Exam submitted successfully");
+//   } catch (error) {
+//     console.log(error);
+//     return sendResponse(res, 500, "Internal Server Error");
+//   }
+// };
+
+//---------- New code without unblock student------------
+
+// const saveAttampt = async (req, res) => {
+//   const { session_id, student_id, examId } = req.body;
+
+//   try {
+//     const mongo = getMongoDB();
+
+//     const examData = await mongo.collection("saveAnswer").findOne({
+//       session_id,
+//       student_id,
+//       userexamId: examId,
+//     });
+
+//     const sessionData = await mongo.collection("exam_sessions").findOne({
+//       session_id,
+//       student_id,
+//     });
+
+//     if (!examData) {
+//       return sendResponse(res, 404, "Exam session not found");
+//     }
+
+//     const { userexamId, answers, examdate } = examData;
+
+//     const questionOrder = sessionData?.question_order || [];
+
+//     const insertData = [];
+
+//     for (const questionId in answers) {
+//       const ans = answers[questionId];
+
+//       insertData.push([
+//         userexamId,
+//         questionId,
+//         ans.answer,
+//         ans.timeTaken,
+//         ans.totalTimeTaken,
+//         examdate,
+//         "1",
+//         new Date(),
+//         JSON.stringify(questionOrder),
+//       ]);
+//     }
+
+//     // save answers
+//     await db.query(
+//       `
+//       INSERT INTO userexam
+//       (
+//         ExamLoginID,
+//         QuestionID,
+//         AnswerID,
+//         TimeTaken,
+//         totalTimeTaken,
+//         examdate,
+//         isExamFinished,
+//         Examendtime,
+//         questions
+//       )
+//       VALUES ?
+//       `,
+//       [insertData],
+//     );
+
+//     // generate report automatically
+//     await db.query(`CALL GenerateExamSummary(?)`, [userexamId]);
+
+//     // cleanup
+//     await mongo.collection("exam_sessions").deleteOne({ session_id });
+
+//     await mongo.collection("saveAnswer").deleteOne({ session_id });
+
+//     return sendResponse(res, 200, "Exam submitted successfully");
+//   } catch (error) {
+//     console.log(error);
+
+//     return sendResponse(res, 500, "Internal Server Error");
+//   }
+// };
+
+//---------- New code with unblock student------------
 const saveAttampt = async (req, res) => {
   const { session_id, student_id, examId } = req.body;
 
+  const connection = await db.getConnection();
+
   try {
+    await connection.beginTransaction();
+
     const mongo = getMongoDB();
 
-    // get exam data from mongo
     const examData = await mongo.collection("saveAnswer").findOne({
-      session_id: session_id,
-      student_id: student_id,
+      session_id,
+      student_id,
       userexamId: examId,
     });
 
+    const sessionData = await mongo.collection("exam_sessions").findOne({
+      session_id,
+      student_id,
+    });
+
     if (!examData) {
+      await connection.rollback();
       return sendResponse(res, 404, "Exam session not found");
     }
 
     const { userexamId, answers, examdate } = examData;
+
+    const questionOrder = sessionData?.question_order || [];
 
     const insertData = [];
 
@@ -93,25 +264,63 @@ const saveAttampt = async (req, res) => {
         examdate,
         "1",
         new Date(),
+        JSON.stringify(questionOrder),
       ]);
     }
 
-    // insert into final mysql table
-    await db.query(
+    // Save answers
+    await connection.query(
       `INSERT INTO userexam
-      (ExamLoginID, QuestionID, AnswerID, TimeTaken, totalTimeTaken,examdate,isExamFinished,Examendtime)
+      (
+        ExamLoginID,
+        QuestionID,
+        AnswerID,
+        TimeTaken,
+        totalTimeTaken,
+        examdate,
+        isExamFinished,
+        Examendtime,
+        questions
+      )
       VALUES ?`,
       [insertData],
     );
 
-    // optional: delete temp data
+    // Generate result report
+    await connection.query(`CALL GenerateExamSummary(?)`, [userexamId]);
+
+    // Unblock student
+    await connection.query(
+      `UPDATE student
+       SET isblocked = ?, updated_at = NOW()
+       WHERE id = ?`,
+      [0, student_id],
+    );
+
+    // Store release history
+    await connection.query(
+      `INSERT INTO releasehistory
+      (student_id, releaseDate)
+      VALUES (?, CURDATE())`,
+      [student_id],
+    );
+
+    await connection.commit();
+
+    // Mongo cleanup after SQL success
     await mongo.collection("exam_sessions").deleteOne({ session_id });
+
     await mongo.collection("saveAnswer").deleteOne({ session_id });
 
     return sendResponse(res, 200, "Exam submitted successfully");
   } catch (error) {
+    await connection.rollback();
+
     console.log(error);
+
     return sendResponse(res, 500, "Internal Server Error");
+  } finally {
+    connection.release();
   }
 };
 

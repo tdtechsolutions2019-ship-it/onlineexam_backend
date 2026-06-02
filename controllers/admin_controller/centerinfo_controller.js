@@ -52,7 +52,7 @@ const addCenterInfo = async (req, res) => {
       status,
     ]);
     const userId = creteUser.insertId;
-    const [result] = await db.query(CenterInfoQuery.addincenterinfo, [
+    const [result] = await connection.query(CenterInfoQuery.addincenterinfo, [
       center_name,
       userId,
       center_code,
@@ -68,9 +68,8 @@ const addCenterInfo = async (req, res) => {
       center_logo ? `/uploads/centerLogos/${center_logo.filename}` : null,
     ]);
 
-
     const centerId = result.insertId;
-    const [userupdate] = await db.query(UsersQuery.updateCenterId, [
+    const [userupdate] = await connection.query(UsersQuery.updateCenterId, [
       centerId,
       userId,
     ]);
@@ -79,8 +78,13 @@ const addCenterInfo = async (req, res) => {
     await sendLoginEmail(email, plainPassword);
     return sendResponse(res, 200, "Center Info Added Successfully!!");
   } catch (error) {
-    console.log("error", error);
+    await connection.rollback();
+
+    console.log(error);
+
     return sendResponse(res, 500, "Internal Server Error", error);
+  } finally {
+    connection.release();
   }
 };
 
@@ -111,7 +115,7 @@ const getCenterInfoBYId = async (req, res) => {
       return sendResponse(res, 400, "Center is not found");
     }
     const [result] = await db.query(CenterInfoQuery.getCenterinfo, [id]);
-  
+
     const Centerdata = result[0];
     const BASE_URL = `${req.protocol}://${req.get("host")}`;
     console.log("BASE_URL", BASE_URL);
