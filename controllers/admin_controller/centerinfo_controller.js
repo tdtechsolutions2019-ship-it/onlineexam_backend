@@ -75,7 +75,7 @@ const addCenterInfo = async (req, res) => {
     ]);
     console.log("userupdate", userupdate);
     await connection.commit();
-    await sendLoginEmail(email, plainPassword);
+  //  await sendLoginEmail(email, plainPassword);
     return sendResponse(res, 200, "Center Info Added Successfully!!");
   } catch (error) {
     await connection.rollback();
